@@ -338,6 +338,7 @@ func main() {
 			scanner.Scan()
 
 		case "3":
+			clearScreen()
 			if lenTargets() == 0 {
 				fmt.Println("Список пуст.")
 			} else {
