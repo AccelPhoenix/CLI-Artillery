@@ -163,19 +163,9 @@ func listTargets() string {
 }
 
 // ---------- Ввод данных ----------
-func inputCoord(prompt string) (Coord, error) {
-	fmt.Print(prompt)
-	var input string
-	fmt.Scanln(&input)
-	val, err := strconv.Atoi(input)
-	if err != nil {
-		return 0, errors.New("некорректная координата")
-	}
-	return Coord(val), nil
-}
 
 func inputCoords(prompt string, scale int) (Coord, Coord, error) {
-	fmt.Print(prompt)
+	fmt.Printf("%s (%d цифр):", prompt, scale)
 	var input string
 	fmt.Scanln(&input)
 	if len(input) != scale {
@@ -208,10 +198,10 @@ func inputLine(prompt string) string {
 func menuAddTarget(snailMode bool, scale int) (int, error) {
 	name := inputLine("Название цели: ")
 	if name == "" {
-		return 0, errors.New("название не может быть пустым")
+		name = fmt.Sprintf("default name: %d", globalId)
 	}
 
-	east, north, err := inputCoords("Введите координаты одной строкой: ", scale)
+	east, north, err := inputCoords("Введите координаты одной строкой", scale)
 	if err != nil {
 		return 0, err
 	}
@@ -281,7 +271,7 @@ func menuEditTarget(id int) error {
 		alt = val
 	}
 
-	snailStr := inputLine("Улитка (0-9) [текущая неизвестна, введите 0 если не менять]: ")
+	snailStr := inputLine("Улитка (0-9) [текущая неизвестна, введите 0 если не используется]: ")
 	var snail int
 	if snailStr != "" {
 		val, err := strconv.Atoi(snailStr)
@@ -291,7 +281,7 @@ func menuEditTarget(id int) error {
 		snail = val
 	}
 
-	// Важно: если улитка не меняется (snail=0), координаты East/North могут быть новыми – editTarget это учтёт.
+	// Важно: если улитка не используется (snail=0), координаты East/North могут быть новыми – editTarget это учтёт.
 	return editTarget(&tgt, name, east, north, alt, snail)
 }
 
