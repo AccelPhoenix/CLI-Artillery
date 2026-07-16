@@ -46,6 +46,9 @@ var snailDeltas = [9]Snail{
 	{East: 50, North: 50},
 }
 
+var lastID int = -1 // -1 означает, что ещё не добавлено
+var favID int = -1
+
 var targets = make(map[int]Target, 100)
 var globalId int = 1 // начинаем с 1, чтобы ID были >=1
 
@@ -232,6 +235,60 @@ func menuAddTarget(snailMode bool, scale int) (int, error) {
 	return id, nil
 }
 
+func submenuTarget(id int) error {
+	scanner := bufio.NewScanner(os.Stdin)
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "Ошибка ввода:", err)
+		return err
+	}
+
+	for {
+		// Показываем информацию о цели
+		tgt, _ := targets[id] // мы знаем, что цель существует
+		fmt.Printf("Цель %02d: %s\n", id, tgt)
+		fmt.Println("e. Редактировать")
+		fmt.Println("d. Удалить")
+		fmt.Println("f. Сделать избранной")
+		fmt.Println("0. Назад")
+		fmt.Print("Выберите действие: ")
+
+		scanner.Scan()
+		choice := strings.TrimSpace(scanner.Text())
+
+		switch choice {
+		case "e", "E":
+			err := menuEditTarget(id)
+			if err != nil {
+				fmt.Println("Ошибка:", err)
+			} else {
+				fmt.Println("Цель обновлена.")
+			}
+			return nil // после редактирования можно сразу выйти из подменю
+		case "d", "D":
+			removeTarget(id)
+			fmt.Printf("Цель %02d удалена.\n", id)
+			// сброс глобальных переменных
+			if lastID == id {
+				lastID = -1
+			}
+			if favID == id {
+				favID = -1
+			}
+			return nil // возвращаемся, потому что цель удалена
+		case "f", "F":
+			favID = id
+			fmt.Printf("Цель %02d теперь избранная.\n", id)
+			return nil
+		case "0":
+			return nil
+		default:
+			fmt.Println("Неверная команда.")
+		}
+		fmt.Println("Нажмите Enter для продолжения...")
+		scanner.Scan()
+	}
+}
+
 func menuEditTarget(id int) error {
 	tgt, ok := targets[id]
 	if !ok {
@@ -287,8 +344,6 @@ func menuEditTarget(id int) error {
 
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
-	var lastID int = -1 // -1 означает, что ещё не добавлено
-	var favID int = -1
 
 	for {
 		clearScreen()
@@ -339,63 +394,40 @@ func main() {
 
 		case "3":
 			clearScreen()
-			if lenTargets() == 0 {
-				fmt.Println("Список пуст.")
-			} else {
-				fmt.Print(listTargets())
-				fmt.Print("Введите ID для редактирования, 'd ID' для удаления, 'f ID' для избранного, 0 для возврата: ")
-				var input string
-				fmt.Scanln(&input)
-				input = strings.TrimSpace(input)
-
-				if input == "0" {
-					// ничего не делаем, просто возврат
-				} else if strings.HasPrefix(input, "d ") {
-					idStr := strings.TrimPrefix(input, "d ")
-					id, err := strconv.Atoi(idStr)
-					if err != nil || id <= 0 {
-						fmt.Println("Некорректный ID.")
-					} else {
-						if _, ok := targets[id]; ok {
-							removeTarget(id)
-							fmt.Printf("Цель %02d удалена.\n", id)
-							if lastID == id {
-								lastID = -1
-							}
-							if favID == id {
-								favID = -1
-							}
-						} else {
-							fmt.Println("Цель с таким ID не найдена.")
-						}
-					}
-				} else if strings.HasPrefix(input, "f ") {
-					idStr := strings.TrimPrefix(input, "f ")
-					id, err := strconv.Atoi(idStr)
-					if err != nil || id <= 0 {
-						fmt.Println("Некорректный ID.")
-					} else {
-						if _, ok := targets[id]; ok {
-							favID = id
-							fmt.Printf("Избранная цель установлена: %02d\n", favID)
-						} else {
-							fmt.Println("Цель с таким ID не найдена.")
-						}
-					}
-				} else {
-					editID, err := strconv.Atoi(input)
-					if err != nil || editID <= 0 {
-						fmt.Println("Некорректный ID.")
-					} else {
-						err := menuEditTarget(editID)
-						if err != nil {
-							fmt.Println("Ошибка:", err)
-						} else {
-							fmt.Println("Цель обновлена.")
-						}
-					}
+			for {
+				if lenTargets() == 0 {
+					fmt.Println("Список пуст.")
+					break
 				}
+				fmt.Print(listTargets())
+				fmt.Print("Введите ID цели (0 для возврата): ")
+				scanner.Scan()
+				idStr := strings.TrimSpace(scanner.Text())
+				if idStr == "0" {
+					break
+				}
+				id, err := strconv.Atoi(idStr)
+				if err != nil || id <= 0 {
+					fmt.Println("Некорректный ID.")
+					fmt.Println("Нажмите Enter для продолжения...")
+					scanner.Scan()
+					clearScreen()
+					continue
+				}
+				if _, ok := targets[id]; !ok {
+					fmt.Println("Цель не найдена.")
+					fmt.Println("Нажмите Enter для продолжения...")
+					scanner.Scan()
+					clearScreen()
+					continue
+				}
+				// Вызываем подменю
+				clearScreen()
+				submenuTarget(id)
+				// После выхода из подменю обновляем список (clearScreen уже вызывается в начале следующей итерации)
+				clearScreen()
 			}
+			// после выхода из цикла (break или пустой список) ждём Enter и возврат в главное меню
 			fmt.Println("Нажмите Enter для продолжения...")
 			scanner.Scan()
 
