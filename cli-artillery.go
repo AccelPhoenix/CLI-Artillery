@@ -378,8 +378,6 @@ func main() {
 				lastID = id
 				fmt.Printf("Цель добавлена, ID: %02d\n", id)
 			}
-			fmt.Println("Нажмите Enter для продолжения...")
-			scanner.Scan()
 
 		case "2":
 			id, err := menuAddTarget(false, 10)
@@ -389,8 +387,6 @@ func main() {
 				lastID = id
 				fmt.Printf("Цель добавлена, ID: %02d\n", id)
 			}
-			fmt.Println("Нажмите Enter для продолжения...")
-			scanner.Scan()
 
 		case "3":
 			clearScreen()
@@ -427,17 +423,12 @@ func main() {
 				// После выхода из подменю обновляем список (clearScreen уже вызывается в начале следующей итерации)
 				clearScreen()
 			}
-			// после выхода из цикла (break или пустой список) ждём Enter и возврат в главное меню
-			fmt.Println("Нажмите Enter для продолжения...")
-			scanner.Scan()
 
 		case "999":
 			clearIdandMap()
 			lastID = -1
 			favID = -1
 			fmt.Println("Все цели удалены.")
-			fmt.Println("Нажмите Enter для продолжения...")
-			scanner.Scan()
 
 		case "0":
 			fmt.Println("Выход.")
